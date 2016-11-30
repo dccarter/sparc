@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="CPP_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/CMakeLists.txt" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/routes_tests.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/sut.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/main.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/sut.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/main.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/http.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/module.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/domain.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/tasks.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/http.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/linux.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/mem.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/tasks.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/pool.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/worker.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/validator.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/net.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/connection.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/utils.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/accesslog.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/websocket.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/timer.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/keymgr.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/buf.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/auth.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/kore/msg.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/ccan_json.c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/base/ccan_json.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/util.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/json.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/app.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/embed.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/json.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/router.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/static_file.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/app.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/session.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/request.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/static_file.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/bgtimer.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/session.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/response.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/request.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/bgtimer.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/router.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/detail/response.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sparc/util.h" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/hello.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/CMakeLists.txt" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/basic.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/crud.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/sauth.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/serve.cpp" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/misc.cpp" isTestSource="false" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library">
+      <library name="Header Search Paths">
+        <CLASSES>
+          <root url="file:///usr/include" />
+          <root url="file:///usr/lib/gcc/x86_64-linux-gnu/5/include" />
+          <root url="file:///usr/lib/gcc/x86_64-linux-gnu/5/include-fixed" />
+          <root url="file:///usr/local/include" />
+        </CLASSES>
+        <SOURCES>
+          <root url="file:///usr/include" />
+          <root url="file:///usr/lib/gcc/x86_64-linux-gnu/5/include" />
+          <root url="file:///usr/lib/gcc/x86_64-linux-gnu/5/include-fixed" />
+          <root url="file:///usr/local/include" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+  </component>
+</module>
