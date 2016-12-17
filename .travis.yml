@@ -5,24 +5,15 @@ branches:
     
 language: cpp
 
-matrix:
-  include:
-    - os: linux
-      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
-      addons:
-        apt:
-          packages:
-            - g++-5
-            - gcc-5
-          sources: &sources
-            - ubuntu-toolchain-r-test
-  
 before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get purge cmake
   - sudo apt-get update -qq
   
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+  - sudo apt-get install gcc-6
+  - sudo apt-get install g++-6
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
   - sudo apt-get install cmake -y
   - cmake --version
   - g++ --version
