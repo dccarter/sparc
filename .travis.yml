@@ -13,6 +13,7 @@ matrix:
         apt:
           packages:
             - g++-5
+            - gcc-5
           sources: &sources
             - ubuntu-toolchain-r-test
   
@@ -21,6 +22,7 @@ before_install:
   - sudo apt-get update -qq
   
 install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
   - sudo apt-get install cmake -y
   - cmake --version
   - g++ --version
