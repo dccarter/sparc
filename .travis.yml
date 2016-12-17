@@ -22,5 +22,5 @@ script:
  - cmake ..
  - make && ./sparc_test
  
- cache:
+cache:
   - apt
