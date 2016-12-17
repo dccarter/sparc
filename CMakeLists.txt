@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 PROJECT(sparc C CXX)
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
@@ -50,8 +50,8 @@ INCLUDE_DIRECTORIES(base/ base/kore sparc sparc/detail)
 ADD_LIBRARY(sparc-dev STATIC ${SOURCE_FILES})
 TARGET_LINK_LIBRARIES(sparc-dev pthread dl ssl crypto)
 
-ADD_EXECUTABLE(sparc main.cpp)
-TARGET_LINK_LIBRARIES(sparc sparc-dev pthread dl ssl crypto)
+ADD_EXECUTABLE(sparc ${SOURCE_FILES} main.cpp)
+TARGET_LINK_LIBRARIES(sparc pthread dl ssl crypto)
 
 if (SPARC_EXAMPLES)
     ADD_SUBDIRECTORY(examples)
@@ -59,7 +59,10 @@ endif()
 
 if (SPARC_TESTS)
     FILE(GLOB SPARC_TEST_SOURCES test/*.c test/*.cpp)
+    SET(SPARC_TEST_SOURCES ${SOURCE_FILES} ${SPARC_TEST_SOURCES})
+
     INCLUDE_DIRECTORIES(test)
+
     ADD_EXECUTABLE(sparc_test ${SPARC_TEST_SOURCES})
-    TARGET_LINK_LIBRARIES(sparc_test sparc-dev pthread dl ssl crypto)
+    TARGET_LINK_LIBRARIES(sparc_test pthread dl ssl crypto)
 endif()

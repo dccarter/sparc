@@ -1,0 +1,30 @@
+dist: xenial
+branches:
+  only:
+    - master
+    
+language: cpp
+
+before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get purge cmake
+  - sudo apt-get update -qq
+  
+install:
+  - sudo apt-get install gcc-6
+  - sudo apt-get install g++-6
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
+  - sudo apt-get install cmake -y
+  - cmake --version
+  - g++ --version
+  
+before_script:
+  - mkdir build
+  - cd build
+
+script:
+ - cmake ..
+ - make && ./sparc_test
+ 
+cache:
+  - apt
