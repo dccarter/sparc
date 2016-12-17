@@ -1,0 +1,17 @@
+branches:
+  only:
+    - master
+
+language: cpp
+
+compiler:
+  - gcc
+  
+before_script:
+  - mkdir build
+  - cd build
+
+script:
+ - cmake ..
+ - make
+ - [ "$?" = "0" ] && ./sparc_test
