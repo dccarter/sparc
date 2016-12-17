@@ -14,4 +14,4 @@ before_script:
 script:
  - cmake ..
  - make
- - [ "$?" = "0" ] && ./sparc_test
+ - if [ "$?" = "0" ] then ; ./sparc_test
