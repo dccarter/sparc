@@ -7,22 +7,14 @@ language: cpp
 
 matrix:
   include:
-    - compiler: gcc
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
-      env: COMPILER=g++-4.9
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      env: COMPILER=g++-5
+          sources: &sources
+            - ubuntu-toolchain-r-test
   
 before_install:
   - sudo apt-get purge cmake
