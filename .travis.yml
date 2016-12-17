@@ -2,21 +2,36 @@ dist: xenial
 branches:
   only:
     - master
-
+    
 language: cpp
 
-compiler:
-  - gcc
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env: COMPILER=g++-4.9
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env: COMPILER=g++-5
   
 before_install:
   - sudo apt-get purge cmake
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -q
+  - sudo apt-get update -qq
   
 install:
-  - sudo apt-get install g++-5 -y
   - sudo apt-get install cmake -y
   - cmake --version
+  - g++ --version
   
 before_script:
   - mkdir build
