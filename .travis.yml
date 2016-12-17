@@ -10,9 +10,11 @@ compiler:
   
 before_install:
   - sudo apt-get purge cmake
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
   - sudo apt-get update -q
   
 install:
+  - sudo apt-get install g++-5 -y
   - sudo apt-get install cmake -y
   - cmake --version
   
