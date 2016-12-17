@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/dccarter/sparc.svg?branch=master)](https://travis-ci.org/dccarter/sparc)
+
 # `$.Sparc(c++1y); // lightweight web framework `
 
 Sparc C++1y is Linux lightweight [Spark](http://sparkjava.com/) web framework  for designing web applications/API
