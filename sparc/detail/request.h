@@ -69,6 +69,14 @@ namespace sparc {
 
             RouteHandler *resolveRoute(Router *r);
 
+            RouteHandler *handler() {
+                return hanadler_;
+            }
+
+            struct http_request *raw() {
+                return req_;
+            }
+
             virtual ~HttpRequest();
 
             OVERLOAD_MEMOPERATORS();

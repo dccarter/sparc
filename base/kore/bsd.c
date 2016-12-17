@@ -268,7 +268,7 @@ kore_platform_disable_read(int fd)
 }
 
 void
-kore_platform_proctitle(char *title)
+kore_platform_proctitle(const char *title)
 {
 #ifndef __MACH__
     setproctitle("%s", title);

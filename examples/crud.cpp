@@ -18,8 +18,7 @@ int main(int argc, char *argv[])
 {
     // the most elegant solution for you will be to use std map here
     $enter(argc, argv);
-    config::debug($OFF);
-
+    config::domain(SPARC_DOMAIN_NAME);
 
     static int    UID = 0;
     std::unordered_map<int, Book> books_;
@@ -42,10 +41,11 @@ int main(int argc, char *argv[])
         Book *b = NULL;
         map_find(books_, std::stoi(s), b);
         if (b) {
-            res.body().appendf("Title: %s, Author: %s", cstr(b->title), cstr(b->author));
+            res << "Title: " << cstr(b->title)
+                << ", Author: " << cstr(b->author);
             return OK;
         } else {
-            res.body("Book not found");
+            res << "Book not found";
             return NOT_FOUND;
         }
     });
@@ -61,31 +61,30 @@ int main(int argc, char *argv[])
             if (author) b->author = author;
             if (title)  b->title  = title;
 
-            res.body().appendf("Book with id '%s' updated", cstr(id));
+            res << "Book with id '" << cstr(id) << "' updated";
             return OK;
         } else {
-            res.body("Book not found");
+            res << "Book not found";
             return NOT_FOUND;
         }
     });
 
     del("/books/:id", $(req, res) {
         std::string id = req.param("id");
-        Book *b = NULL;
         auto it = books_.find(std::stoi(id));
         if (it != books_.end()) {
             books_.erase(it);
-            res.body().appendf("Book with id '%s' deleted", cstr(id));
+            res << "Book with id '" << cstr(id) << "' deleted";
             return OK;
         } else {
-            res.body("Book not found");
+            res << "Book not found";
             return NOT_FOUND;
         }
     });
 
     get("/books", $(req, res) {
         map_ite(b, books_) {
-            res.body().appendf("%d ", b.first);
+            res << b.first;
         }
         return OK;
     });

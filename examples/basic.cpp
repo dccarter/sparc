@@ -9,32 +9,33 @@ using namespace sparc;
 int main(int argc, char *argv[]) {
 
     $enter(argc, argv);
-    config::debug($ON);
+    config::domain(SPARC_DOMAIN_NAME);
 
     get("/hello", $(req, res) {
-        res.body("Hello world");
+        res << "Hello world";
         return OK;
     });
 
     post("/hello", $(req, res) {
-        res.body().appendf("Hello World: %s", req.body());
+        res << "Hello World: " << req.body();
         return OK;
     });
 
     get("/private", $(req, res){
-        res.body("Go away!!!");
+        res << "Go away!!!";
         return UNAUTHORIZED;
     });
 
     get("/users/:name", $(req, res) {
-        res.body().appendf("Selected user: %s", req.param("name"));
+        res << "Selected user: " << req.param("name");
         return OK;
     });
 
     get("/news/:section", $(req, res) {
         res.type("text/html");
-        res.body().appendf("<?xml version=\"1.0\" encoding=\"UTF-8\"?><news>%s</news>",
-                           req.param("section"));
+        res << "<?xml version=\"1.0\" encoding=\"UTF-8\"?><news>"
+            << req.param("section")
+            << "</news>";
         return OK;
     });
 

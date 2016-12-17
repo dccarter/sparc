@@ -6,6 +6,19 @@
 #include "kore.h"
 #include "http.h"
 #include "sparc.h"
+#include "websocket.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+struct kore_wscbs wscbs = {
+        on_websocket_connect,
+        on_websocket_message,
+        on_websocket_disconnect
+};
+#ifdef __cplusplus
+};
+#endif
 
 namespace sparc {
     namespace detail {
@@ -23,7 +36,7 @@ namespace sparc {
         int App::handle(http_request *raw) {
             HttpRequest     request(raw);
             HttpResponse    response(raw);
-            int status      = OK;
+            int status      = OK, ret = $CONTINUE;
             RouteHandler    *handler;
             static_file     *sf = NULL;
             c_string       tok;
@@ -88,19 +101,21 @@ namespace sparc {
                     response.header("Content-Type", handler->contentType);
                 }
                 response.status(status);
-
-                status = callFidecs(&after_, handler->prefix, request, response);
+                ret = callFidecs(&after_, handler->prefix, request, response);
+                response.status(ret);
             }
         app_handle_exit:
             kore_debug("handled request(%s:%p) status=%d", raw->path, raw, status);
-            response.flush();
+            if (status != _SKIP_FLUSH)
+                response.flush();
+
             return KORE_RESULT_OK;
         }
 
         int App::callFidecs(Fidecs *fidecs, cc_string prefix,
                                   HttpRequest& req, HttpResponse& resp) {
             Fidec *fc;
-            int   status    = OK;
+            int   status    = $CONTINUE;
             size_t plen;
 
             kore_debug("%s(%p:%p)", __func__, fidecs, prefix);
@@ -236,6 +251,41 @@ namespace sparc {
             mgr.schedule(th, tout, flags);
         } else {
             fatal("Scheduling timer while not initialized prohibited");
+        }
+    }
+
+    void webSocket(cc_string path, WsOnMessage onMessage) {
+        webSocket(path, onMessage, NULL, NULL);
+    }
+
+    void webSocket(cc_string route, WsOnMessage onMessage, WsOnConnect onConnect, WsOnDisconnect onDisconnect) {
+        if (route && onMessage) {
+            detail::Route *r;
+            detail::Router &router = detail::App::app()->router();
+
+            detail::WebSocketHandler *h = (detail::WebSocketHandler *) kore_malloc(sizeof(detail::WebSocketHandler));
+            h->onConnect = onConnect;
+            h->onDisconnect = onDisconnect;
+            h->onMessage = onMessage;
+
+            r = router.add(GET, route, $(req, res) {
+                detail::HttpRequest& hreq = (detail::HttpRequest&) req;
+                if (hreq.handler()->data[0]) {
+                    hreq.raw()->owner->data[0] = hreq.handler()->data[0];
+                    kore_websocket_handshake(hreq.raw(), &wscbs);
+                    return _SKIP_FLUSH;
+                }
+                return $ABORT;
+            }, NULL, NULL, h);
+
+            if (r == NULL) {
+                delete h;
+                throw detail::InitializetionException(
+                        KORE_RESULT_ERROR, "Adding route failed, ensure there are not conflicts");
+            }
+        } else {
+            throw detail::InitializetionException(
+                    KORE_RESULT_ERROR, "Adding route failed: invalid route add parameters");
         }
     }
 

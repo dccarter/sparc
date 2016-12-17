@@ -119,7 +119,7 @@ namespace sparc {
             return value;
         }
 
-        int64_t HttpSession::exipryTime() {
+        long HttpSession::exipryTime() {
             return session_->expiryTime;
         }
 

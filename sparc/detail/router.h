@@ -18,9 +18,10 @@ namespace sparc {
             ResponseTransformer *transformer;
             handler             h;
             Method              m;
-            c_string      *params;
-            cc_string     prefix;
-            u_int8_t            nparams;
+            c_string        *params;
+            cc_string       prefix;
+            u_int8_t        nparams;
+            void            *data[1];
             ~RouteHandler();
             OVERLOAD_MEMOPERATORS()
         };
@@ -51,7 +52,7 @@ namespace sparc {
             Router();
             ~Router();
 
-            Route* add(Method, cc_string, handler, cc_string, ResponseTransformer*);
+            Route* add(Method, cc_string, handler, cc_string, ResponseTransformer*, void *data = NULL);
             RouteHandler* remove(Method, cc_string);
             RouteHandler* find(Method, cc_string, c_string*, c_string*, size_t*, c_string**);
 

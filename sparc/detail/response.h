@@ -117,6 +117,21 @@ namespace sparc {
                 return ended_;
             }
 
+            virtual Response&operator<<(const cc_string str) override {
+                body_.append(str, strlen(str));
+                return *this;
+            }
+
+            virtual Response&operator<<(const double real) override  {
+                body_.appendf("%.4f", real);
+                return *this;
+            }
+
+            virtual Response&operator<<(const int num) override  {
+                body_.appendf("%d", num);
+                return *this;
+            }
+
             OVERLOAD_MEMOPERATORS()
 
         private:

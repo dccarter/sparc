@@ -71,6 +71,8 @@ kore_connection_new(void *owner)
     c->type = KORE_TYPE_CONNECTION;
     c->idle_timer.start = 0;
     c->idle_timer.length = KORE_IDLE_TIMER_MAX;
+    c->data[0] = NULL;
+    c->data[1] = NULL;
 
 #if !defined(KORE_NO_HTTP)
     c->wscbs = NULL;

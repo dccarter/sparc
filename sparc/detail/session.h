@@ -32,7 +32,7 @@ namespace sparc {
             virtual void eachAttribute(KVIterator) override;
             virtual cc_string id() override;
             virtual bool isNew() override;
-            virtual int64_t exipryTime() override;
+            virtual long exipryTime() override;
             virtual ~HttpSession();
 
             OVERLOAD_MEMOPERATORS();

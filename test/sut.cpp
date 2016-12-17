@@ -70,7 +70,7 @@ sut_report_console(sut_suite_t* suite)
 {
     sut_fixture_t **f;
     sut_test_t     *t;
-    char           *tab = "    ";
+    const char *tab = "    ";
     uint32_t        passed = 0, failed = 0, skipped = 0, waived = 0;
 
     if (suite->result)

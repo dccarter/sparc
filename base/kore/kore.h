@@ -175,6 +175,7 @@ struct connection {
 #endif
     u_int8_t        flags;
     void            *hdlr_extra;
+    void            *data[2];
 
     int            (*handle)(struct connection *);
     void            (*disconnect)(struct connection *);
@@ -191,16 +192,13 @@ struct connection {
         u_int64_t    length;
         u_int64_t    start;
     } idle_timer;
-
     struct netbuf_head    send_queue;
     struct netbuf        *snb;
     struct netbuf        *rnb;
-
 #if !defined(KORE_NO_HTTP)
     void                *wscbs;
     TAILQ_HEAD(, http_request)    http_requests;
 #endif
-
     TAILQ_ENTRY(connection)    list;
 };
 
@@ -457,7 +455,7 @@ struct kore_worker    *kore_worker_data(u_int8_t);
 void        kore_platform_init(void);
 void        kore_platform_event_init(void);
 void        kore_platform_event_cleanup(void);
-void        kore_platform_proctitle(char *);
+void        kore_platform_proctitle(const char *);
 void        kore_platform_disable_read(int);
 void        kore_platform_enable_accept(void);
 void        kore_platform_disable_accept(void);

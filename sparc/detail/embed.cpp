@@ -339,7 +339,7 @@ namespace sparc {
             // setup minimal default configuration
             config::ip("127.0.0.1");
             config::port("1080");
-            config::domain("127.0.0.1");
+            config::domain("localhost");
             config::workers(1);
             config::setForeground($ON);
             config::skipRunAs($ON);

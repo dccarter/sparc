@@ -198,7 +198,7 @@ namespace sparc {
         virtual void eachAttribute(KVIterator) = 0;
         virtual cc_string id() = 0;
         virtual bool isNew() = 0;
-        virtual int64_t exipryTime() = 0;
+        virtual long exipryTime() = 0;
     };
 
     class Request {
@@ -248,6 +248,9 @@ namespace sparc {
                             cc_string, cc_string, int64_t, bool) = 0;
         virtual void removeCookie(cc_string) = 0;
         virtual int  status(int status = 0) = 0;
+        virtual Response&operator<<(const cc_string) = 0;
+        virtual Response&operator<<(const double) = 0;
+        virtual Response&operator<<(const int) = 0;
     };
 
     class ResponseTransformer {
@@ -263,5 +266,34 @@ namespace sparc {
     } *timerid;
 
     using handler = std::function<int(Request&, Response&)>;
+
+    enum {
+        WS_OP_CONT   = 0x00,
+        WS_OP_TEXT   = 0x01,
+        WS_OP_BINARY = 0x02,
+        WS_OP_CLOSE  = 0x08,
+        WS_OP_PING   = 0x09,
+        WS_OP_PONG   = 0x10
+    };
+
+    enum {
+        WS_BROADCAST_LOCAL  =   1,
+        WS_BROADCAST_GLOBAL
+    };
+
+    class WebSocket {
+    public:
+        virtual void send(void*, size_t, u_int8_t op=WS_OP_BINARY) = 0;
+        virtual void send(cc_string, u_int8_t op=WS_OP_TEXT) = 0;
+        virtual void broadcast(void*, size_t, u_int8_t op=WS_OP_BINARY) = 0;
+        virtual void broadcast(cc_string, u_int8_t op=WS_OP_TEXT) = 0;
+        virtual void globalBroadcast(void*, size_t, u_int8_t op=WS_OP_BINARY) = 0;
+        virtual void globalBroadcast(cc_string, u_int8_t op=WS_OP_TEXT) = 0;
+        virtual void close() = 0;
+    };
+
+    using WsOnConnect       = std::function<void(WebSocket*)>;
+    using WsOnDisconnect    = std::function<void(WebSocket*)>;
+    using WsOnMessage       = std::function<void(WebSocket*, void*, size_t, u_int8_t)>;
 }
 #endif //SPARC_DETAIL_H

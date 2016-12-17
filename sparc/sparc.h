@@ -6,6 +6,7 @@
 #define SPARC_SPARC_H_H
 
 #include <sys/types.h>
+#include <sys/syslog.h>
 #include <stdint.h>
 
 #include <functional>
@@ -130,23 +131,18 @@ namespace sparc {
 #endif
 
 #if defined(FOLD) || defined(WEBSOCKET)
+#define $message(w, d, s, o) [&]( WebSocket* w , void* d , size_t s , u_int8_t o )
+#define $connect(w) [&]( WebSocket* w )
+#define $disconnect(w) [&]( WebSocket* w )
 
-    class WebSocket {
-    };
-
-    class WsHandler {
-    public:
-        virtual bool connected(WebSocket&)  = 0;
-        virtual bool message(WebSocket&, buffer) = 0;
-        virtual bool closed(WebSocket&) = 0;
-    };
-
-    static void webSocket(cc_string, WsHandler *);
-
+    void webSocket(cc_string, WsOnMessage);
+    void webSocket(cc_string, WsOnMessage, WsOnConnect, WsOnDisconnect);
 #endif
 
 #define $CONTINUE   1
 #define $ABORT      0
+#define _SKIP_FLUSH 2
+
 #define $ON         1
 #define $OFF        0
 

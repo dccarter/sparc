@@ -28,6 +28,10 @@ namespace sparc {
                 delete transformer;
                 transformer = NULL;
             }
+            if (data[0]) {
+                kore_free(data[0]);
+                data[0] = NULL;
+            }
 
             nparams = 0;
             h = nullptr;
@@ -160,7 +164,9 @@ namespace sparc {
                            cc_string route,
                            handler hh,
                            cc_string contentType,
-                           ResponseTransformer* t)
+                           ResponseTransformer* t,
+                           void * data
+        )
         {
             char         *tokens[8], *tok;
             char         *rpath;
@@ -206,6 +212,7 @@ namespace sparc {
                 h->contentType  = contentType? kore_strdup(contentType) : NULL;
                 h->h            = hh? std::move(hh) : nullptr;
                 h->transformer  = t? std::move(t) : nullptr;
+                h->data[0]      = data;
                 return r;
             }
 

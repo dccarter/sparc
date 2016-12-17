@@ -11,7 +11,6 @@ using namespace sparc;
 int main(int argc, char *argv[])
 {
     $enter(argc, argv);
-    config::debug($ON);
 
     std::unordered_map<std::string, std::string> passbox_;
     passbox_.insert({"foo", "bar"});

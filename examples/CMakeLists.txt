@@ -8,6 +8,7 @@ macro(Sparc_Example name SOURCES)
     endif()
     SET_TARGET_PROPERTIES(${name} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples/)
+    TARGET_COMPILE_DEFINITIONS(${name} PUBLIC -DSPARC_DOMAIN_NAME=\"sparc.suilteam.com\")
 endmacro()
 
 Sparc_Example(hello hello.cpp)
