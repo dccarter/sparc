@@ -19,10 +19,11 @@ install:
   - sudo apt-get -y install libpq-dev postgresql-9.5 postgresql-server-dev-9.6 openssl libssl-dev
   - wget https://cmake.org/files/v3.5/cmake-3.5.2.tar.gz
   - tar xzf cmake-3.5.2.tar.gz
-  - cd cmake-3.5.2/
+  - pushd cmake-3.5.2/
   - ./configure
   - make -j4
   - sudo make install
+  - popd
   - find /usr/ -name libpq-fe.h
   - cmake --version
   - g++ --version
