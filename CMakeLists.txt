@@ -5,6 +5,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
 OPTION(SPARC_TESTS      "Build sparc unit tests" ON)
 OPTION(SPARC_EXAMPLES   "Build sparc examples" ON)
+OPTION(SPARC_PQ_V96     "Build PgSQL version will default to 9.6" OFF)
 
 SET(SPARC_FLAGS "${SPARC_FLAGS} -Wmissing-declarations -Wshadow -Wpointer-arith")
 SET(SPARC_FLAGS "${SPARC_FLAGS} -Wsign-compare -Wno-pedantic -rdynamic")
@@ -44,7 +45,11 @@ SET(SOURCE_FILES
         ${SPARC_DETAIL_SOURCES}
         ${SPARC_SOURCES})
 
-FIND_PACKAGE(PostgreSQL 9.5 REQUIRED)
+SET(PGSQL_VERSION 9.5)
+if (SPARC_PQ_V96)
+    SET(PGSQL_VERSION 9.6)
+endif()
+FIND_PACKAGE(PostgreSQL ${PGSQL_VERSION} REQUIRED)
 
 ADD_DEFINITIONS("-DKORE_NO_TLS -DTASKS -DKORE_DEBUG -DKORE_SINGLE_BINARY -DKORE_USE_PGSQL=1 -D_GNU_SOURCE=1")
 INCLUDE_DIRECTORIES(base/ base/kore sparc sparc/detail ${PostgreSQL_INCLUDE_DIRS})

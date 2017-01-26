@@ -28,7 +28,7 @@ before_script:
   - cd build
 
 script:
- - cmake ..
+ - cmake .. -DSPARC_PQ_V96=ON
  - make && ./sparc_test
  
 cache:
