@@ -18,7 +18,6 @@ install:
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
   - sudo apt-get -y install cmake
   - sudo apt-get -y install libpq-dev postgresql-9.5 postgresql-server-dev-9.5
-
   - cmake --version
   - g++ --version
   - psql --version
@@ -28,7 +27,7 @@ before_script:
   - cd build
 
 script:
- - cmake .. -DSPARC_PQ_V96=ON
+ - cmake .. -DSPARC_PQ_V96=ON -DPostgreSQL_ROOR=/usr/include/postgresql/
  - make && ./sparc_test
  
 cache:
