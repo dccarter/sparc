@@ -494,6 +494,7 @@ static JsonNode *mknode(JsonTag tag)
     JsonNode *ret = (JsonNode*) kore_calloc(1, sizeof(JsonNode));
     if (ret == NULL)
         out_of_memory();
+    memset(ret, 0, sizeof(*ret));
     ret->tag = tag;
     return ret;
 }

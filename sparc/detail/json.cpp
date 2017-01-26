@@ -197,7 +197,6 @@ namespace sparc {
 
         CcanJson::~CcanJson() {
             if (root_) {
-                kore_debug("destroying request");
                 json_delete(root_);
                 root_ = NULL;
             }

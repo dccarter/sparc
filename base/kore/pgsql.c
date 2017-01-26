@@ -347,6 +347,12 @@ kore_pgsql_ntuples(struct kore_pgsql *pgsql)
 }
 
 int
+kore_pgsql_nfields(struct kore_pgsql *pgsql)
+{
+    return (PQnfields(pgsql->result));
+}
+
+int
 kore_pgsql_getlength(struct kore_pgsql *pgsql, int row, int col)
 {
     return (PQgetlength(pgsql->result, row, col));
@@ -356,6 +362,19 @@ char *
 kore_pgsql_getvalue(struct kore_pgsql *pgsql, int row, int col)
 {
     return (PQgetvalue(pgsql->result, row, col));
+}
+
+char *
+kore_pgsql_getvalue_by_name(struct kore_pgsql *pgsql, int row, const char *fname)
+{
+    int col = (PQfnumber(pgsql->result, fname));
+    return (col < 0)? NULL : (PQgetvalue(pgsql->result, row, col));
+}
+
+char *
+kore_pgsql_fname(struct kore_pgsql *pgsql, int fnumber)
+{
+    return (PQfname(pgsql->result, fnumber));
 }
 
 void

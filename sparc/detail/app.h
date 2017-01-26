@@ -6,6 +6,7 @@
 #define SPARC_APP_H
 
 #include <functional>
+#include <sparc.h>
 
 #include "static_file.h"
 #include "bgtimer.h"
@@ -14,6 +15,7 @@
 #include "request.h"
 #include "response.h"
 #include "router.h"
+#include "db.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -59,16 +61,19 @@ namespace sparc {
             static bool initialized() { return SPARC != NULL; }
             HttpSessionManager& sessionManager();
             BgTimerManager&     timerManager();
+            db::DbManager&      dbManager();
             StaticFilesRouter&  staticFiles();
             int run();
         private:
             int     callFidecs(Fidecs*, cc_string, HttpRequest&, HttpResponse&);
             int     callRequestHandler(RouteHandler*, HttpRequest&, HttpResponse&);
+            int     startAsyncStateMachine();
             bool    initConfig();
         private:
             App();
             Router              router_;
             HttpSessionManager  sessionManager_;
+            db::DbManager       dbManager_;
             Fidecs              before_;
             Fidecs              after_;
             BgTimerManager      bgTimerManager_;

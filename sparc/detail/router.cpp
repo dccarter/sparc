@@ -247,7 +247,7 @@ namespace sparc {
                     RouteHandler *rh;
                     if (i && c == '/') {
                         itok++;
-                        if (itok > *ntoks) {
+                        if (itok >= *ntoks) {
                             break;
                         }
                         tlen = strlen(tokens[itok]);

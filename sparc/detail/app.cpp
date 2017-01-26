@@ -5,7 +5,6 @@
 #include "app.h"
 #include "kore.h"
 #include "http.h"
-#include "sparc.h"
 #include "websocket.h"
 
 #ifdef __cplusplus
@@ -27,7 +26,8 @@ namespace sparc {
             : router_{},
               bgTimerManager_{},
               sessionManager_(sessionTimeout),
-              sfRouter_(2048)
+              sfRouter_(2048),
+              dbManager_(0)
         {
             TAILQ_INIT(&after_);
             TAILQ_INIT(&before_);
@@ -44,11 +44,10 @@ namespace sparc {
             kore_debug("handle request(%s:%p)", raw->path, raw);
 
             tok = strchr(raw->path, '.');
-            if (tok) {
-                if (strchr(tok, '/')) {
-                    tok = NULL;
-                }
+            if (tok && strchr(tok, '/')) {
+                tok = NULL;
             }
+
             if (tok) {
                 kore_debug("assuming static file %s", raw->path);
                 sf = sfRouter_.find(raw->path);
@@ -84,8 +83,6 @@ namespace sparc {
                     goto app_handle_exit;
 
                 status = callRequestHandler(handler, request, response);
-                if (status == $ABORT)
-                    goto app_handle_exit;
 
                 ResponseTransformer *rt = handler->transformer;
                 if (rt) {
@@ -106,7 +103,7 @@ namespace sparc {
             }
         app_handle_exit:
             kore_debug("handled request(%s:%p) status=%d", raw->path, raw, status);
-            if (status != _SKIP_FLUSH)
+            if (status != $SKIP_FLUSH)
                 response.flush();
 
             return KORE_RESULT_OK;
@@ -197,6 +194,10 @@ namespace sparc {
             return bgTimerManager_;
         }
 
+        db::DbManager& App::dbManager() {
+            return dbManager_;
+        }
+
         StaticFilesRouter& App::staticFiles() {
             return sfRouter_;
         }
@@ -207,7 +208,8 @@ namespace sparc {
         {}
 
         InitializetionException::InitializetionException(int exitCode, cc_string msg)
-            : std::runtime_error(msg)
+            : std::runtime_error(msg),
+              exitCode_(exitCode)
         {}
     }
 
@@ -273,7 +275,7 @@ namespace sparc {
                 if (hreq.handler()->data[0]) {
                     hreq.raw()->owner->data[0] = hreq.handler()->data[0];
                     kore_websocket_handshake(hreq.raw(), &wscbs);
-                    return _SKIP_FLUSH;
+                    return $SKIP_FLUSH;
                 }
                 return $ABORT;
             }, NULL, NULL, h);
@@ -287,6 +289,35 @@ namespace sparc {
             throw detail::InitializetionException(
                     KORE_RESULT_ERROR, "Adding route failed: invalid route add parameters");
         }
+    }
+
+    namespace db {
+
+        Result query(int dbid, Sql& sql) {
+            detail::App *app = detail::App::app();
+            if (app) {
+                Context *ctx = app->dbManager().get(dbid);
+                if (ctx) {
+                    Result res = ctx->exec(sql);
+                    sql.setResult(res);
+                    return res;
+                }
+            }
+            kore_debug("database with index %d was not found", dbid);
+            return nullptr;
+        }
+
+        int    query(int dbid, Sql& sql, OnAsync onAsync) {
+            detail::App *app = detail::App::app();
+            if (app) {
+                Context *ctx = app->dbManager().get(dbid);
+                if (ctx)
+                    return ctx->exec(std::move(sql), onAsync);
+            }
+            kore_debug("database with index %d was not found", dbid);
+            return 0;
+        }
+
     }
 
     namespace staticFiles {
@@ -359,6 +390,7 @@ kore_onload()
 {
     // flush timers that were cached
     sparc::detail::App::app()->timerManager().flush();
+    sparc::detail::App::app()->dbManager().init();
 }
 
 int

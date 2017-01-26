@@ -123,6 +123,7 @@ namespace sparc {
 
         void appendf(const char *, ...);
 
+        void appendv(const char *, va_list args);
         cc_string toString();
 
         const size_t offset() const;

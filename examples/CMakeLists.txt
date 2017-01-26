@@ -17,6 +17,7 @@ Sparc_Example(crud crud.cpp)
 Sparc_Example(sauth sauth.cpp)
 Sparc_Example(serve serve.cpp)
 Sparc_Example(misc misc.cpp)
+Sparc_Example(database databases.cpp)
 
 
 # Install the assets directory

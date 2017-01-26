@@ -527,6 +527,13 @@ namespace sparc {
             if (v >= 0) skip_chroot = (u_int8_t) v;
             return (u_int8_t) skip_chroot;
         }
+
+        int db(db::Context *db) {
+            if (detail::App::app()) {
+                return detail::App::app()->dbManager().add(db);
+            }
+            return 0;
+        }
     }
 
 #if !defined(KORE_NO_TLS)

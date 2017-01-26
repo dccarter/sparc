@@ -37,7 +37,7 @@ SUT_TEST(RouteAddHandlerTest);
 SUT_TEST(RouteFindHandlerTest);
 
 /**
- * @tests tests adding route's and handlers to the router
+ * @test tests adding route's and handlers to the router
  */
 SUT_TEST(RouterAddTest);
 

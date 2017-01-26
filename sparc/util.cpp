@@ -71,6 +71,10 @@ namespace sparc {
         va_end(args);
     }
 
+    void buffer::appendv(const char *fmt, va_list args) {
+        kore_buf_appendv(buf_, fmt, args);
+    }
+
     buffer buffer::init(kore_buf *buf, size_t isz) {
         buffer b;
         kore_buf_init(buf, isz);

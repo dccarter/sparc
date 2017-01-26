@@ -31,8 +31,8 @@ SET(KORE_SOURCES
         base/kore/utils.c
         base/kore/validator.c
         base/kore/websocket.c
-        base/kore/worker.c)
-
+        base/kore/worker.c
+        base/kore/pgsql.c)
 
 FILE(GLOB SPARC_SOURCES sparc/*.cpp sparc/*.c)
 FILE(GLOB SPARC_DETAIL_SOURCES sparc/detail/*.cpp sparc/detail/*.c)
@@ -44,11 +44,12 @@ SET(SOURCE_FILES
         ${SPARC_DETAIL_SOURCES}
         ${SPARC_SOURCES})
 
-ADD_DEFINITIONS("-DKORE_NO_TLS -DTASKS -DKORE_DEBUG -DKORE_SINGLE_BINARY -D_GNU_SOURCE=1")
-INCLUDE_DIRECTORIES(base/ base/kore sparc sparc/detail)
+FIND_PACKAGE(PostgreSQL 9.5 REQUIRED)
 
+ADD_DEFINITIONS("-DKORE_NO_TLS -DTASKS -DKORE_DEBUG -DKORE_SINGLE_BINARY -DKORE_USE_PGSQL=1 -D_GNU_SOURCE=1")
+INCLUDE_DIRECTORIES(base/ base/kore sparc sparc/detail ${PostgreSQL_INCLUDE_DIRS})
 ADD_LIBRARY(sparc-dev STATIC ${SOURCE_FILES})
-TARGET_LINK_LIBRARIES(sparc-dev pthread dl ssl crypto)
+TARGET_LINK_LIBRARIES(sparc-dev pthread dl ssl crypto ${PostgreSQL_LIBRARIES})
 
 ADD_EXECUTABLE(sparc main.cpp)
 TARGET_LINK_LIBRARIES(sparc sparc-dev pthread dl ssl crypto)

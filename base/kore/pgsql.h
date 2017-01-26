@@ -71,9 +71,12 @@ int    kore_pgsql_v_query_params(struct kore_pgsql *,
         const char *, int, u_int8_t, va_list);
 int    kore_pgsql_register(const char *, const char *);
 int    kore_pgsql_ntuples(struct kore_pgsql *);
+int    kore_pgsql_nfields(struct kore_pgsql *);
 void    kore_pgsql_logerror(struct kore_pgsql *);
 void    kore_pgsql_queue_remove(struct http_request *);
 char    *kore_pgsql_getvalue(struct kore_pgsql *, int, int);
+char    *kore_pgsql_getvalue_by_name(struct kore_pgsql *, int, const char*);
+char    *kore_pgsql_fname(struct kore_pgsql *, int);
 int    kore_pgsql_getlength(struct kore_pgsql *, int, int);
 
 #if defined(__cplusplus)
