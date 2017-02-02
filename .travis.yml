@@ -17,9 +17,9 @@ install:
   - sudo apt-get -y install g++-6
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
   - sudo apt-get -y install libpq-dev postgresql-9.5 postgresql-server-dev-9.6 openssl libssl-dev
-  - wget https://cmake.org/files/v3.5/cmake-3.5.2.tar.gz
-  - tar xzf cmake-3.5.2.tar.gz
-  - pushd cmake-3.5.2/
+  - wget https://cmake.org/files/v3.7/cmake-3.7.2.tar.gz
+  - tar xzf cmake-3.7.2.tar.gz
+  - pushd cmake-3.7.2/
   - ./configure
   - make -j4
   - sudo make install
