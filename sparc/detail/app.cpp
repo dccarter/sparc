@@ -3,9 +3,11 @@
 //
 
 #include "app.h"
-#include "kore.h"
 #include "http.h"
 #include "websocket.h"
+#include "kore.h"
+#include "pgsql.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,12 +22,16 @@ struct kore_wscbs wscbs = {
 #endif
 
 namespace sparc {
+
+    Request::~Request() {}
+    Response::~Response() {}
+
     namespace detail {
 
         App::App()
             : router_{},
               bgTimerManager_{},
-              sessionManager_(sessionTimeout),
+              sessionManager_(&sessionTimeout),
               sfRouter_(2048),
               dbManager_(0)
         {
@@ -33,15 +39,44 @@ namespace sparc {
             TAILQ_INIT(&before_);
         }
 
+        int App::nextState(struct http_request *raw) {
+
+            if (raw->data[0]) {
+                HttpRequest *request = (HttpRequest *) raw->data[0];
+                struct http_state *states = request->asyncStates;
+                if (states) {
+                    return http_state_run(states, request->nAsyncStates, raw);
+                }
+            }
+            $warn("error transitioning to next state, request to found");
+            return (HTTP_STATE_COMPLETE);
+        }
+
+        void App::asyncError(struct http_request *raw) {
+            if (raw->data[0] != NULL) {
+                Request *req = (HttpRequest *) raw->data[0];
+                delete  req;
+                raw->data[0] = NULL;
+            }
+
+            if (raw->data[0] != NULL) {
+                Response *resp = (HttpResponse *) raw->data[1];
+                delete  resp;
+                raw->data[1] = NULL;
+            }
+        }
+
         int App::handle(http_request *raw) {
-            HttpRequest     request(raw);
-            HttpResponse    response(raw);
-            int status      = OK, ret = $CONTINUE;
+            HttpRequest     *req = new HttpRequest(raw), &request = *req;
+            HttpResponse    *resp = new HttpResponse(raw), &response = *resp;
+            int status      = OK, ret = $CONTINUE, flash = 0;
             RouteHandler    *handler;
             static_file     *sf = NULL;
             c_string       tok;
 
             kore_debug("handle request(%s:%p)", raw->path, raw);
+            // append server header
+            resp->header("server", SPARC_SERVER_VERSION);
 
             tok = strchr(raw->path, '.');
             if (tok && strchr(tok, '/')) {
@@ -49,6 +84,8 @@ namespace sparc {
             }
 
             if (tok) {
+
+                flash = 1;
                 kore_debug("assuming static file %s", raw->path);
                 sf = sfRouter_.find(raw->path);
                 if (sf == NULL) {
@@ -66,7 +103,6 @@ namespace sparc {
                     response.end(OK, sf->ptr, sf->len);
                 status = $ABORT;
                 goto app_handle_exit;
-
             } else {
 
                 handler = request.resolveRoute(&router_);
@@ -79,33 +115,91 @@ namespace sparc {
 
                 kore_debug("calling fidecs request(%s:%p)", raw->path, raw);
                 status = callFidecs(&before_, handler->prefix, request, response);
-                if (status == $ABORT)
+                if (status == $ABORT) {
+                    flash = 1;
                     goto app_handle_exit;
+                }
 
                 status = callRequestHandler(handler, request, response);
-
-                ResponseTransformer *rt = handler->transformer;
-                if (rt) {
-                    size_t hint;
-                    hint = rt->sizeHint(response.body().offset());
-                    buffer b(hint);
-                    status = rt->transform(response, b);
-                    if (status == $ABORT)
-                        goto app_handle_exit;
-                    response.swapBody(b);
+                if (status == $ASYNC) {
+                    struct http_state *states = request.asyncStates;
+                    if (states) {
+                        raw->data[0] = req;
+                        raw->data[1] = resp;
+                        return http_state_run(states, request.nAsyncStates, raw);
+                    }
+                    $warn("unable to complete asynchronous request, no states provided");
+                    response.status(HTTP_STATUS_INTERNAL_ERROR);
+                    // if request data was already set free the data
+                    if (request.asyncCleanup_ && raw->hdlr_extra) {
+                        kore_debug("cleaning up request data");
+                        request.asyncCleanup_(raw->hdlr_extra);
+                        raw->hdlr_extra = NULL;
+                    }
                 }
-                if (handler->contentType) {
-                    response.header("Content-Type", handler->contentType);
+                else {
+                    return completeRequest(req, resp, handler, status);
                 }
-                response.status(status);
-                ret = callFidecs(&after_, handler->prefix, request, response);
-                response.status(ret);
             }
         app_handle_exit:
             kore_debug("handled request(%s:%p) status=%d", raw->path, raw, status);
-            if (status != $SKIP_FLUSH)
+            if (flash)
                 response.flush();
 
+            delete req;
+            delete resp;
+            return KORE_RESULT_OK;
+        }
+
+        int App::completeRequest(Request *req, Response *resp, RouteHandler *rh, int status) {
+
+            int ret = $CONTINUE;
+            ResponseTransformer *rt = rh->transformer;
+            HttpResponse& response = (HttpResponse&) *resp;
+            HttpRequest& request = (HttpRequest&) *req;
+
+            if (rt) {
+                size_t hint;
+                hint = rt->sizeHint(response.body().offset());
+                buffer b(hint);
+                status = rt->transform(response, b);
+                if (status == $ABORT)
+                    goto app_handle_exit;
+                response.swapBody(b);
+            }
+
+            if (rh->contentType) {
+                response.header("Content-Type", rh->contentType);
+            }
+            response.status(status);
+            ret = callFidecs(&after_, rh->prefix, request, response);
+            if (ret >= HTTP_STATUS_OK)
+                response.status(ret);
+            else {
+                switch (ret) {
+                    case $CONTINUE:
+                    case $SKIP_FLUSH:
+                        break;
+                    case $ASYNC:
+                        $warn("fidecs returned $ASYNC which is not allowed in a FIDEC");
+                    case $ABORT:
+                        response.status(HTTP_STATUS_INTERNAL_ERROR);
+                        break;
+                    default:
+                        $warn("unknown return code from fidec %d", ret);
+                        response.status(HTTP_STATUS_INTERNAL_ERROR);
+                        break;
+                }
+            }
+
+        app_handle_exit:
+            kore_debug("handled request(%s:%p) status=%d",
+                       request.raw()->path, request.raw(), status);
+            if (ret != $SKIP_FLUSH)
+                response.flush();
+
+            delete req;
+            delete resp;
             return KORE_RESULT_OK;
         }
 
@@ -260,6 +354,11 @@ namespace sparc {
         webSocket(path, onMessage, NULL, NULL);
     }
 
+    int __id() {
+        return worker->id;
+    }
+
+
     void webSocket(cc_string route, WsOnMessage onMessage, WsOnConnect onConnect, WsOnDisconnect onDisconnect) {
         if (route && onMessage) {
             detail::Route *r;
@@ -271,7 +370,7 @@ namespace sparc {
             h->onMessage = onMessage;
 
             r = router.add(GET, route, $(req, res) {
-                detail::HttpRequest& hreq = (detail::HttpRequest&) req;
+               const  detail::HttpRequest& hreq = (detail::HttpRequest&) req;
                 if (hreq.handler()->data[0]) {
                     hreq.raw()->owner->data[0] = hreq.handler()->data[0];
                     kore_websocket_handshake(hreq.raw(), &wscbs);
@@ -391,6 +490,8 @@ kore_onload()
     // flush timers that were cached
     sparc::detail::App::app()->timerManager().flush();
     sparc::detail::App::app()->dbManager().init();
+    // invoke registered onload
+    sparc::detail::App::app()->onLoad();
 }
 
 int
@@ -400,5 +501,8 @@ sparcxx(http_request *req)
     kore_debug("routing request (%p)", req);
     if (app == NULL)
         return (KORE_RESULT_ERROR);
-    return app->handle(req);
+    if (req->hdlr_extra == NULL)
+        return app->handle(req);
+    else
+        return app->nextState(req);
 }

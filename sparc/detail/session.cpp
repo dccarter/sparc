@@ -2,6 +2,9 @@
 // Created by dc on 11/24/16.
 //
 
+#include <openssl/md5.h>
+#include <openssl/rand.h>
+
 #include "uthash.h"
 #include "session.h"
 #include "kore.h"
@@ -127,10 +130,14 @@ namespace sparc {
             return new_;
         }
 
-        HttpSessionManager::HttpSessionManager(int64_t timeout)
+        HttpSessionManager::HttpSessionManager(int64_t *timeout)
             : timeout_(timeout),
               sessions_(NULL)
-        {}
+        {
+            if (!RAND_bytes(SESSIONS_KEY, sizeof(SESSIONS_KEY))) {
+                $error("Unable to allocate sessions key");
+            }
+        }
 
         HttpSessionManager::~HttpSessionManager() {
             http_session *raw, *tmp;
@@ -140,20 +147,33 @@ namespace sparc {
             sessions_ = NULL;
         }
 
+        cc_string HttpSessionManager::ipToSessionId(cc_string ip) const {
+            cc_string dstr = NULL;
+            buffer tmp(64);
+            cc_string sessionId;
+            tmp.append(SESSIONS_KEY, sizeof(SESSIONS_KEY));
+            tmp.append(ip, strlen(ip));
+            dstr = tmp.toString();
+            sessionId = md5Hash(dstr, NULL, tmp.offset()-1);
+            return (char *) sessionId;
+        }
+
         HttpSession* HttpSessionManager::find(cc_string sessionId) {
             http_session *raw;
             HASH_FIND_STR(sessions_, sessionId, raw);
             if (raw) {
                 // session has expired, delete immediately
                 if (raw->expiryTime > 0 && ((uint64_t)raw->expiryTime < datetime::now())) {
+                    kore_debug("session expired... %ld %lu", raw->expiryTime, datetime::now());
                     discard(raw);
                 } else {
                     HttpSession *session = (HttpSession *) raw->data;
                     session->session_->expiryTime =
-                            timeout_ < 0 ? timeout_ : (int64_t) (timeout_ + datetime::now());
+                            *timeout_ < 0 ? *timeout_ : (int64_t) (*timeout_ + datetime::now());
                     return session;
                 }
             }
+            kore_debug("session not found...");
             return NULL;
         }
 
@@ -165,20 +185,28 @@ namespace sparc {
             }
         }
 
-        HttpSession* HttpSessionManager::create(cc_string sessionId) {
+        HttpSession* HttpSessionManager::create(cc_string ip, bool create) {
             HttpSession *session;
+            cc_string sessionId = ipToSessionId(ip);
             session = find(sessionId);
-            if (session == NULL) {
+            if (session == NULL && create) {
                 session = new HttpSession(this);
                 session->session_ = (http_session *) kore_calloc(1, sizeof(http_session));
                 session->new_ = true;
                 session->session_->expiryTime =
-                        timeout_ < 0 ? timeout_ : (int64_t) (timeout_ + datetime::now());
+                        *timeout_ < 0 ? *timeout_ : (int64_t) (*timeout_ + datetime::now());
                 session->session_->data = session;
                 session->session_->id   = kore_strdup(sessionId);
                 TAILQ_INIT(&session->session_->attributes);
                 // add to sessions
                 HASH_ADD_STR(sessions_, id, session->session_);
+                kore_debug("created a new session..., %s:%ld",
+                           session->session_->id, session->session_->expiryTime);
+            } else if (session) {
+                // this is not a new session
+                session->new_ = false;
+                kore_debug("using a cached session..., %s",
+                           sessionId);
             }
 
             return session;

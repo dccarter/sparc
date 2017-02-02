@@ -14,6 +14,14 @@
 
 #include "common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+struct pgsql_db;
+#ifdef __cplusplus
+}
+#endif
+
 namespace sparc {
 
     #define $(rq, rs)   [&]( Request& rq, Response& rs )
@@ -118,6 +126,18 @@ namespace sparc {
         void header(cc_string, cc_string);
     }
 
+    int __id();
+#define $n(n)       if (n == __id())
+#define $els        else
+#define $0          $n(0)
+#define $1          $n(1)
+#define $2          $n(2)
+#define $3          $n(3)
+#define $4          $n(4)
+#define $5          $n(5)
+#define $6          $n(6)
+#define $7          $n(7)
+
 #define $message(w, d, s, o) [&]( WebSocket* w , void* d , size_t s , u_int8_t o )
 #define $connect(w) [&]( WebSocket* w )
 #define $disconnect(w) [&]( WebSocket* w )
@@ -129,15 +149,21 @@ namespace sparc {
 #define $ABORT      0
 #define $SKIP_FLUSH 2
 #define $ASYNC      3
-#define $async(status) do { if (status != $ASYNC) return $ABORT;return $ASYNC; } while(0)
 #define $ON         1
 #define $OFF        0
 
     void __halt(u_int16_t, cc_string);
     #define $halt(s, m) { __halt((s), (m)); return $ABORT; }
 
+#define TIMER_ONESHOT       (0x01)
     void $timeout(timerid_t::timedout, u_int64_t, int flags = 0);
     #define $tm( tid )  [&]( timerid tid )
+
+#define    $async(status) ({if(status != $ASYNC) return $ABORT; return $ASYNC; })
+
+    namespace detail {
+        class App;
+    }
 
     namespace db {
 
@@ -145,17 +171,19 @@ namespace sparc {
         typedef struct  result_t *Result;
         class Sql;
 
-#define $db(sql, res) [&]( sparc::db::Sql& sql , const sparc::db::Result res )
-        using OnAsync = std::function<int( Sql& sql, const Result res)>;
+#define $db(sql, res) [&]( sparc::db::Sql& sql , sparc::db::result_t& res )
+        using OnAsync = std::function<int( Sql& sql, result_t& res)>;
         Result query(int dbid, Sql&);
         int    query(int dbid, Sql&, OnAsync);
 
         class Sql {
         public:
             Sql();
-            Sql(const Request& req, Response& res);
+            Sql(Request& req);
+            Sql(Sql&& sql);
+
             Sql& operator()(cc_string fmt, ...);
-            const Request& req() const {
+            Request& req() {
                 return *req_;
             }
 
@@ -167,16 +195,23 @@ namespace sparc {
                 return sql_.toString();
             }
 
+            void async(Request *req, Response *resp) {
+                req_ = req;
+                res_ = resp;
+            }
+
             ~Sql();
 
             void debug();
+
+            OVERLOAD_MEMOPERATORS();
 
         private:
             friend Result query(int dbid, Sql&);
             friend int    query(int dbid, Sql&, OnAsync);
             void setResult(result_t *result);
         private:
-            const Request   *req_;
+            Request         *req_;
             Response        *res_;
             result_t        *result_;
             buffer          sql_;
@@ -282,6 +317,8 @@ namespace sparc {
             virtual Json* toJson() { return NULL; };
 
             virtual ~result_t() {}
+
+            OVERLOAD_MEMOPERATORS();
         };
 
         class Context {
@@ -305,6 +342,7 @@ namespace sparc {
         private:
             c_string        name_;
             c_string        connString_;
+            struct pgsql_db *db_;
         };
     }
 
@@ -361,6 +399,7 @@ namespace sparc {
 
         u_int8_t  skipChroot(int8_t v = -1);
 
+        int64_t   sessionTimeout(int64_t v = -INT64_MAX);
         int db(db::Context *db);
     }
 
@@ -383,6 +422,81 @@ namespace sparc {
 
     void $enter(int argc, char *argv[]);
     int $exit();
+    using OnLoad = std::function<void(void)>;
+#define $onload()   []( void )
+    int $start(OnLoad onl);
+
+    namespace admin {
+        /**
+         * retrive all the installed route handlers in json format
+         * @return a json object containing all the installed routes
+         */
+        Json *routes();
+    }
+
+    namespace auth {
+        enum auth_type {
+            AUTH_TYPE_ANY,
+            AUTH_TYPE_BASIC,
+            AUTH_TYPE_DIGEST,
+            AUTH_TYPE_TOKEN
+        };
+
+        struct auth_info_t {
+            auth_info_t(auth_type t, cc_string uname)
+                : type(t),
+                  username(uname),
+                  password(NULL),
+                  salt(NULL)
+            {}
+            auth_type     type;
+            cc_string     username;
+            cc_string     password;
+            cc_string     salt;
+        };
+
+        using AuthInfoCb = std::function<bool(auth_info_t&)>;
+
+        struct user_t : public virtual auto_obj {
+            operator bool() const {
+                return authenticated;
+            }
+
+            cc_string getUsername() const {
+                return username;
+            }
+
+            cc_string getPassword() const {
+                return password;
+            }
+
+            auto_obj_dctor(user_t);
+        protected:
+
+            friend user_t authenticate(Request &, AuthInfoCb, auth_type);
+            user_t(c_string user, c_string pwd)
+                : auto_obj(),
+                  username(user),
+                  password(pwd),
+                  authenticated(false)
+            { }
+
+            c_string    username;
+            c_string    password;
+            bool        authenticated;
+        };
+
+        user_t authenticate(Request &req,
+                             AuthInfoCb getInfo,
+                             auth_type t = AUTH_TYPE_ANY);
+
+        bool authorize(Request& req,
+                       Response& resp,
+                       user_t& user,
+                       cc_string realm,
+                       auth_type type = AUTH_TYPE_ANY);
+
+    }
 }
 
 #endif //SPARC_SPARC_H_H

@@ -25,6 +25,7 @@ namespace sparc {
             void flush();
             void schedule(timerid_t::timedout, u_int64_t, int flags);
             ~BgTimerManager();
+            OVERLOAD_MEMOPERATORS();
         private:
             bool                      cache_;
             // this list will only be valid prior to initialization,

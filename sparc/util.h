@@ -7,6 +7,7 @@
 
 #include <sys/types.h>
 #include <sys/queue.h>
+#include <openssl/md5.h>
 
 #include <ctime>
 #include <cassert>
@@ -107,21 +108,39 @@ namespace sparc {
         }
     };
 
+    static inline cc_string md5Hash(cc_string data, c_string out, size_t len) {
+        uint8_t RAW[MD5_DIGEST_LENGTH];
+        static char TMP[(MD5_DIGEST_LENGTH*2)+1];
+        c_string wb = out? out : TMP;
+        size_t i = 0;
+        int rc = 0;
+        MD5((const uint8_t*)data, len, RAW);
+        for(;i < sizeof(RAW); i++)
+            rc += sprintf(wb+rc, "%02x", RAW[i]);
+        return wb;
+    }
+
 #define println(fmt, ...)   printf(fmt "\n", ##__VA_ARGS__ )
 
     class buffer {
     public:
         buffer();
 
-        buffer(const buffer&);
+        buffer(const buffer&) = delete;
 
-        buffer& operator=(const buffer&);
+        buffer(buffer&&);
+
+        buffer& operator=(const buffer&&) = delete;
+
+        buffer& operator=(buffer&&);
 
         buffer(size_t);
 
         void append(const void *, size_t);
 
         void appendf(const char *, ...);
+
+        void bytes(const uint8_t *, size_t);
 
         void appendv(const char *, va_list args);
         cc_string toString();
@@ -140,11 +159,8 @@ namespace sparc {
 
         ~buffer();
 
-        static buffer init(kore_buf *, size_t);
-
     private:
         kore_buf *buf_;
-        int      *ref_;
     };
 
     class memory {
@@ -169,6 +185,7 @@ namespace sparc {
         virtual auto_obj&operator=(const auto_obj& obj);
         virtual ~auto_obj();
         virtual void destroy(){};
+        void debug();
     protected:
         int     *ref;
     };

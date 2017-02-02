@@ -287,6 +287,7 @@ kore_worker_entry(struct kore_worker *kw)
     signal(SIGHUP, kore_signal);
     signal(SIGQUIT, kore_signal);
     signal(SIGTERM, kore_signal);
+    //signal(SIGSEGV, kore_signal);
     signal(SIGPIPE, SIG_IGN);
 
     if (foreground)
@@ -327,7 +328,7 @@ kore_worker_entry(struct kore_worker *kw)
     kore_task_init();
 #endif
 
-    kore_log(LOG_NOTICE, "worker %d started (cpu#%d)", kw->id, kw->cpu);
+    kore_log(LOG_NOTICE, "worker(%d) %d started (cpu#%d)", kw->pid, kw->id, kw->cpu);
 
 #if defined(KORE_SINGLE_BINARY)
     *(void **)&(onload) = kore_module_getsym("kore_onload");
@@ -339,6 +340,7 @@ kore_worker_entry(struct kore_worker *kw)
 
     for (;;) {
         if (sig_recv != 0) {
+            kore_log(LOG_NOTICE, "signal....", sig_recv);
             switch (sig_recv) {
             case SIGHUP:
 #if !defined(KORE_SINGLE_BINARY)

@@ -102,7 +102,7 @@ kore_platform_event_wait(u_int64_t timer)
     }
 
     if (n > 0) {
-        kore_debug("main(): %d sockets available", n);
+        //kore_debug("main(): %d sockets available", n);
     }
 
     r = 0;

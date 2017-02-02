@@ -22,7 +22,10 @@ namespace sparc {
               bodyLoaded_(false),
               body_(NULL),
               json_(NULL),
-              argsLoaded_(false)
+              argsLoaded_(false),
+              formParsed_(false),
+              asyncStates(NULL),
+              nAsyncStates(0)
         {}
 
         HttpRequest::~HttpRequest() {
@@ -44,6 +47,7 @@ namespace sparc {
                 kore_buf_free(body_);
                 body_ = NULL;
             }
+            ip_ = NULL;
             hanadler_ = NULL;
             session_ = NULL;
             params_ = NULL;
@@ -135,6 +139,20 @@ namespace sparc {
             return NULL;
         }
 
+        cc_string HttpRequest::form(cc_string field) {
+            http_arg *farg;
+            if (formParsed_) {
+                http_populate_multipart_form(req_);
+                formParsed_ = true;
+            }
+
+            TAILQ_FOREACH(farg, &req_->arguments, list) {
+                if (!strcmp(field, farg->name)) return farg->s_value;
+            }
+
+            return NULL;
+        }
+
         cc_string HttpRequest::ip() {
             if (ip_ == NULL) {
                 char ipstr[INET6_ADDRSTRLEN];
@@ -217,12 +235,13 @@ namespace sparc {
 
         Session* HttpRequest::session(bool create) {
             if (!session_) {
-                if (create)
-                    session_ = App::app()->sessionManager().create(ip());
-                else
-                    session_ = App::app()->sessionManager().find(ip());
+                session_ = App::app()->sessionManager().create(ip(), create);
             }
             return session_;
+        }
+
+        cc_string HttpRequest::session(cc_string attrib) {
+            return session_? session_->attribute(attrib) : NULL;
         }
 
         cc_string HttpRequest::uri() {

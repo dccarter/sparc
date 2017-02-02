@@ -3,6 +3,7 @@
 //
 
 #include "kore.h"
+#include "http.h"
 #include "sparc.h"
 #include "router.h"
 
@@ -156,6 +157,9 @@ namespace sparc {
             if (root_)
                 // this should initiate deleting the entire trie
                 delete root_;
+            if (jsonCache_)
+                // delete the cached json datastructure if any
+                delete jsonCache_;
 
             root_ = NULL;
         }
@@ -168,7 +172,7 @@ namespace sparc {
                            void * data
         )
         {
-            char         *tokens[8], *tok;
+            char         *tokens[32], *tok;
             char         *rpath;
             int          ntoks, i = 0;
 
@@ -276,6 +280,46 @@ namespace sparc {
             if (*tokenized) kore_free(*tokenized);
             *tokenized = NULL;
             return NULL;
+        }
+
+        void Router::jsonAddNode(JsonObject &obj, Node *node) {
+            RouteHandler *rh = NULL;
+            Node *it = NULL;
+            u_int8_t i = 0;
+
+            // add all routes attached to current node
+            if (node->route != NULL) {
+                JsonObject entry = obj.add();
+                TAILQ_FOREACH(rh, &node->route->handlers, link) {
+                    entry.set("prefix", rh->prefix);
+                    entry.set("contentType", rh->contentType? rh->contentType: "");
+                    entry.set("method", http_method_text(rh->m));
+                    entry.set("route", rh->route);
+                    JsonObject params = entry.arr("params");
+                    for (i = 0; i < rh->nparams; i++) {
+                        params.add(rh->params[i]);
+                    }
+                }
+            }
+            // if node has children, enumerate children
+            TAILQ_FOREACH(it, &node->children, link) {
+                jsonAddNode(obj, it);
+            }
+        }
+
+        Json* Router::toJson() {
+            // save compute type by returning a cached entry
+            if (jsonCache_) {
+                return jsonCache_;
+            }
+
+            // create json object whose string can be cached
+            jsonCache_ = Json::create(true);
+            JsonObject json = jsonCache_;
+            json = json.arr("routes");
+            jsonAddNode(json, root_);
+
+            return jsonCache_;
         }
 
         RouteHandler* Router::remove(Method m, cc_string c) {

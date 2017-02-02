@@ -176,8 +176,9 @@ namespace sparc {
     class Json {
     public:
         static Json*  decode(cc_string);
-        static Json*  create();
+        static Json*  create(bool cache = false);
         virtual c_string  encode(size_t&, char *space = NULL) = 0;
+        virtual c_string  encode() = 0;
         virtual ~Json() {}
     };
 
@@ -201,6 +202,8 @@ namespace sparc {
         virtual long exipryTime() = 0;
     };
 
+    using AsyncCleanup = std::function<void(void*)>;
+
     class Request {
     public:
         virtual cc_string body() = 0;
@@ -211,6 +214,7 @@ namespace sparc {
         virtual cc_string header(cc_string) = 0;
         virtual void eachCookie(cc_string, KVIterator) = 0;
         virtual cc_string cookie(cc_string) = 0;
+        virtual cc_string form(cc_string) = 0;
         virtual cc_string ip() = 0;
         virtual cc_string  param(cc_string) = 0;
         virtual void eachParam(KVIterator) = 0;
@@ -220,12 +224,13 @@ namespace sparc {
         virtual void eachQueryParam(cc_string, KVIterator) = 0;
         virtual Method requestMethod() = 0;
         virtual cc_string scheme() = 0;
-        virtual Session* session(bool) = 0;
+        virtual Session* session(bool create = true) = 0;
+        virtual cc_string session(cc_string) = 0;
         virtual cc_string uri() = 0;
         virtual cc_string uril() = 0;
         virtual cc_string userAgent() = 0;
         virtual Json *json() = 0;
-        virtual ~Request() {};
+        virtual ~Request() = 0;
     };
 
     class Response {
@@ -251,6 +256,8 @@ namespace sparc {
         virtual Response&operator<<(const cc_string) = 0;
         virtual Response&operator<<(const double) = 0;
         virtual Response&operator<<(const int) = 0;
+        virtual Response&operator<<(Json*) = 0;
+        virtual ~Response() = 0;
     };
 
     class ResponseTransformer {

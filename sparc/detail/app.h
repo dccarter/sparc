@@ -45,12 +45,15 @@ namespace sparc {
             c_string      bindIp;
             c_string      bindPort;
             c_string      accessLog;
-            int64_t             sessionTimeout;
+            int64_t       sessionTimeout;
         };
 
         class App : public Configuration {
         public:
-            int handle(http_request*);
+            int handle(struct http_request*);
+            int nextState(struct http_request*);
+            void asyncError(struct http_request*);
+
             Router& router() {
                 return router_;
             }
@@ -63,11 +66,16 @@ namespace sparc {
             BgTimerManager&     timerManager();
             db::DbManager&      dbManager();
             StaticFilesRouter&  staticFiles();
-            int run();
+            int completeRequest(Request* req,
+                                Response* resp,
+                                RouteHandler *rh,
+                                int status);
+            void onLoad();
+
+            int run(OnLoad onl = NULL);
         private:
             int     callFidecs(Fidecs*, cc_string, HttpRequest&, HttpResponse&);
             int     callRequestHandler(RouteHandler*, HttpRequest&, HttpResponse&);
-            int     startAsyncStateMachine();
             bool    initConfig();
         private:
             App();
@@ -78,6 +86,7 @@ namespace sparc {
             Fidecs              after_;
             BgTimerManager      bgTimerManager_;
             StaticFilesRouter   sfRouter_;
+            OnLoad              onLoad_;
             static App          *SPARC;
         };
 

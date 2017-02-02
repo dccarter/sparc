@@ -290,9 +290,10 @@ namespace sparc {
             return false;
         }
 
-        int App::run() {
+        int App::run(OnLoad onl) {
             $notice("Server starting on %s:%s", config::ip(), config::port());
             // bind server address and port to server
+            onLoad_ = onl;
 
             if (!kore_server_bind(config::ip(), config::port(), NULL)) {
                 $error("Starting embedded server failed: %s", errno_s);
@@ -344,6 +345,7 @@ namespace sparc {
             config::setForeground($ON);
             config::skipRunAs($ON);
             config::skipChroot($ON);
+            config::sessionTimeout(180000);
 
             if (primary_dom) {
                 int status = kore_module_handler_new("/",
@@ -359,6 +361,13 @@ namespace sparc {
                 $error("App::config - there is no registered domain");
             }
         }
+
+        void App::onLoad() {
+            // execute Onload if set
+            if (onLoad_) {
+                onLoad_();
+            }
+        }
     }
 
     void $enter(int argc, char *argv[]) {
@@ -371,6 +380,15 @@ namespace sparc {
     int $exit() {
         try {
             return  detail::App::app()->run();
+        } catch (std::exception& ex) {
+            $warn("unhandled exception: %s", ex.what());
+            return EXIT_FAILURE;
+        }
+    }
+
+    int $start(OnLoad onl) {
+        try {
+            return  detail::App::app()->run(onl);
         } catch (std::exception& ex) {
             $warn("unhandled exception: %s", ex.what());
             return EXIT_FAILURE;
@@ -403,6 +421,12 @@ namespace sparc {
 
         cc_string port(cc_string port) {
             return configString(&app()->bindPort, port);
+        }
+
+        int64_t   sessionTimeout(int64_t v) {
+            if (v != -INT64_MAX)
+                app()->sessionTimeout = v;
+            return app()->sessionTimeout;
         }
 
         cc_string domain(cc_string domainName) {

@@ -9,51 +9,34 @@
 namespace sparc {
 
     buffer::buffer()
-        : buf_(NULL),
-          ref_(NULL)
+        : buf_(NULL)
     {
     }
 
     buffer::buffer(size_t isz)
-        : buf_(kore_buf_alloc(isz)),
-          ref_(new int)
+        : buf_(kore_buf_alloc(isz))
+    {}
+
+    buffer::buffer(buffer &&b)
+        : buf_(b.buf_)
     {
-        *ref_ += 1;
+        b.buf_ = NULL;
+    }
+
+    buffer& buffer::operator=(buffer &&b)
+    {
+        if (&b != this) {
+            buf_ = b.buf_;
+            b.buf_ = NULL;
+        }
+        return *this;
     }
 
     buffer::~buffer() {
-        if (ref_) {
-            if (*ref_ == 1) {
-                if (buf_) {
-                    kore_buf_free(buf_);
-                    buf_ = NULL;
-                }
-
-                delete ref_;
-                ref_ = nullptr;
-            } else {
-                *ref_ -= 1;
-            }
+        if (buf_) {
+            kore_buf_free(buf_);
+            buf_ = NULL;
         }
-    }
-
-    buffer::buffer(const buffer &b)
-        : buf_(b.buf_),
-          ref_(b.ref_)
-    {
-        if (ref_) *ref_ += 1;
-    }
-
-    buffer& buffer::operator=(const buffer &b) {
-        if (&b != this) {
-            this->~buffer();
-            buf_ = b.buf_;
-            ref_ = b.ref_;
-            if (ref_)
-                *ref_ += 1;
-        }
-
-        return *this;
     }
 
     void buffer::reset() {
@@ -71,17 +54,18 @@ namespace sparc {
         va_end(args);
     }
 
-    void buffer::appendv(const char *fmt, va_list args) {
-        kore_buf_appendv(buf_, fmt, args);
+    void buffer::bytes(const uint8_t *data, size_t len) {
+        c_string buf = kore_buf_reserve(buf_, (len*3));
+        size_t i=0;
+        int nwr = 0;
+        for (; i < len; i++) {
+            nwr += sprintf((buf+nwr), "%02x", data[i]);
+        }
+        buf_->offset += nwr;
     }
 
-    buffer buffer::init(kore_buf *buf, size_t isz) {
-        buffer b;
-        kore_buf_init(buf, isz);
-        b.buf_  = buf;
-        b.ref_  = new int;
-        b.ref_  += 1;
-        return b;
+    void buffer::appendv(const char *fmt, va_list args) {
+        kore_buf_appendv(buf_, fmt, args);
     }
 
     const size_t buffer::offset() const {
@@ -121,6 +105,12 @@ namespace sparc {
     }
 
     cc_string buffer::toString() {
+        if (buf_ == NULL) {
+            $error("cannot stringify null buffer");
+            fatal("cannot stringify null buffer");
+            return NULL;
+        }
+
         return kore_buf_stringify(buf_, NULL);
     }
 
@@ -144,7 +134,7 @@ namespace sparc {
     auto_obj::auto_obj()
             : ref(new int)
     {
-        *ref += 1;
+        *ref = 1;
     }
 
     auto_obj::~auto_obj() {
@@ -155,6 +145,10 @@ namespace sparc {
                 *ref -= 1;
             ref = NULL;
         }
+    }
+
+    void auto_obj::debug() {
+        kore_debug("ref: %p %d", ref, ref? *ref:0);
     }
 
 

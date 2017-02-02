@@ -56,11 +56,17 @@ namespace sparc {
             RouteHandler* remove(Method, cc_string);
             RouteHandler* find(Method, cc_string, c_string*, c_string*, size_t*, c_string**);
 
+            Json* toJson();
+
             OVERLOAD_MEMOPERATORS()
 
             Node* add(Node*, cc_string, size_t);
             Node                    *root_;
             int                     depth;
+
+        private:
+            void jsonAddNode(JsonObject& obj, Node* node);
+            Json        *jsonCache_;
         };
     }
 }

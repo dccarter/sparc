@@ -5,6 +5,7 @@
 #ifndef SPARC_REQUEST_H
 #define SPARC_REQUEST_H
 
+#include <kore/http.h>
 #include "common.h"
 #include "router.h"
 
@@ -39,6 +40,8 @@ namespace sparc {
 
             virtual cc_string cookie(cc_string) override;
 
+            virtual cc_string form(cc_string) override;
+
             virtual cc_string ip() override;
 
             virtual cc_string param(cc_string) override;
@@ -57,7 +60,9 @@ namespace sparc {
 
             virtual cc_string scheme() override;
 
-            virtual Session *session(bool) override;
+            virtual Session *session(bool create = true) override;
+
+            virtual cc_string session(cc_string) override;
 
             virtual cc_string uri() override;
 
@@ -69,12 +74,22 @@ namespace sparc {
 
             RouteHandler *resolveRoute(Router *r);
 
-            RouteHandler *handler() {
+            RouteHandler *handler() const {
                 return hanadler_;
             }
 
-            struct http_request *raw() {
+            struct http_request *raw() const {
                 return req_;
+            }
+
+            void async(struct http_state *states,
+                       u_int8_t nstates,
+                       AsyncCleanup cleanup = NULL) {
+                if (states != NULL && asyncStates == NULL) {
+                    asyncStates = states;
+                    nAsyncStates = nstates;
+                }
+                asyncCleanup_ = cleanup;
             }
 
             virtual ~HttpRequest();
@@ -82,8 +97,8 @@ namespace sparc {
             OVERLOAD_MEMOPERATORS();
 
         private:
+            friend class App;
             void parseCookies();
-
             struct http_request *req_;
             c_string tokenized_;
             c_string *params_;
@@ -95,7 +110,12 @@ namespace sparc {
             kore_buf *body_;
             bool      bodyLoaded_;
             bool      argsLoaded_;
+            bool      formParsed_;
             Json      *json_;
+            // pointer to the asynchrounous sm
+            struct http_state   *asyncStates;
+            u_int8_t         nAsyncStates;
+            AsyncCleanup     asyncCleanup_;
         };
     }
 }

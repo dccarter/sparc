@@ -21,9 +21,9 @@
 
 #include "kore.h"
 
-#define KORE_MEM_BLOCKS            11
-#define KORE_MEM_BLOCK_SIZE_MAX        8192
-#define KORE_MEM_BLOCK_PREALLOC        128
+#define KORE_MEM_BLOCKS             11
+#define KORE_MEM_BLOCK_SIZE_MAX     8192
+#define KORE_MEM_BLOCK_PREALLOC     128
 
 #define KORE_MEM_ALIGN        (sizeof(size_t))
 #define KORE_MEM_MAGIC        0xd0d0
@@ -145,8 +145,10 @@ kore_free(void *ptr)
         return;
 
     mem = KORE_MEMINFO(ptr);
-    if (mem->magic != KORE_MEM_MAGIC)
+    if (mem->magic != KORE_MEM_MAGIC) {
+        kore_debug("pointer does not belong to kore_mem %p", ptr);
         fatal("kore_free(): magic boundary not found");
+    }
 
     len = KORE_MEMSIZE(ptr);
     addr = (u_int8_t *)ptr - sizeof(size_t);

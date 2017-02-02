@@ -47,17 +47,19 @@ namespace sparc {
 
         class HttpSessionManager {
         public:
-            HttpSession *find(cc_string sessionId);
-            HttpSession *create(cc_string sessionId);
+            HttpSession *find(cc_string ip);
+            HttpSession *create(cc_string id, bool create = false);
             ~HttpSessionManager();
-
             OVERLOAD_MEMOPERATORS();
         private:
             friend class App;
-            HttpSessionManager(int64_t);
+            cc_string ipToSessionId(cc_string ip) const;
+            HttpSessionManager(int64_t*);
             void discard(http_session*);
             http_session    *sessions_;
-            int64_t         timeout_;
+            int64_t         *timeout_;
+            // a simple 32
+            uint8_t         SESSIONS_KEY[32];
         };
     }
 }

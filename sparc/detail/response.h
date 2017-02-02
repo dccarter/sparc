@@ -7,6 +7,7 @@
 
 #include <exception>
 #include <cstring>
+#include <kore/kore.h>
 
 #include "common.h"
 
@@ -89,7 +90,7 @@ namespace sparc {
             }
 
             void swapBody(buffer& b) {
-                body_ = b;
+                body_ = std::move(b);
             }
 
             int status() const {
@@ -131,6 +132,8 @@ namespace sparc {
                 body_.appendf("%d", num);
                 return *this;
             }
+
+            virtual Response&operator<<(Json *json) override;
 
             OVERLOAD_MEMOPERATORS()
 

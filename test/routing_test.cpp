@@ -181,7 +181,7 @@ SUT_TEST(RoutingDynamicParamters)
     SUT_ASSERT_NEQ(rr, NULL);
     {
         route_match     rm = {0};
-        rh = find_route(GET, "/params/", r, rm);
+        rh = find_route(GET, "/params////", r, rm);
         SUT_ASSERT_EQ(rh, NULL);
     }
 }

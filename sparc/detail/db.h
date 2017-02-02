@@ -38,6 +38,8 @@ namespace sparc {
             PgSqlRow(PgSqlResult *result, size_t idx);
             virtual cc_string value(size_t idx) const;
             virtual cc_string value(cc_string idx) const;
+
+            OVERLOAD_MEMOPERATORS();
         private:
             struct kore_pgsql       *sql_;
         };
@@ -45,7 +47,8 @@ namespace sparc {
         class PgSqlResult: public virtual result_t {
         public:
             PgSqlResult(PgSqlResult&& result);
-            PgSqlResult(struct kore_pgsql *sql);
+            PgSqlResult(struct kore_pgsql *sql, bool sqlGive = true);
+            PgSqlResult();
 
             virtual Row* at(size_t index) const {
                 if (index < nrows_) return &rows_[index];
@@ -63,10 +66,13 @@ namespace sparc {
 
             virtual ~PgSqlResult();
 
-            //PgSqlResult&&operator=()
+            int setup(struct kore_pgsql *sql, bool sqlGive = false);
+
+            OVERLOAD_MEMOPERATORS();
         private:
             friend class PgSqlRow;
             struct  kore_pgsql      *sql_;
+            bool                    sqlOwner_;
             size_t                  nrows_;
             PgSqlRow                *rows_;
             Json                    *json_;

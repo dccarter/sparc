@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <limits.h>
+#include <execinfo.h>
 
 #include "kore.h"
 
@@ -492,7 +493,7 @@ kore_base64_encode(u_int8_t *data, size_t len, char **out)
 }
 
 int
-kore_base64_decode(char *in, u_int8_t **out, size_t *olen)
+kore_base64_decode(const char *in, u_int8_t **out, size_t *olen)
 {
     int            i, c;
     struct kore_buf        *res;
@@ -620,6 +621,15 @@ kore_read_line(FILE *fp, char *in, size_t len)
 }
 
 void
+kore_dump_trace(void) {
+    void *buffer[255];
+    int ncalls;
+
+    ncalls = backtrace(buffer, sizeof(buffer)/sizeof(void*));
+    backtrace_symbols_fd(buffer, ncalls, STDOUT_FILENO);
+}
+
+void
 fatal(const char *fmt, ...)
 {
     va_list            args;
@@ -639,5 +649,6 @@ fatal(const char *fmt, ...)
 #endif
 
     printf("%s: %s\n", __progname, buf);
+    kore_dump_trace();
     exit(1);
 }

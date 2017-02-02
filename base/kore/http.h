@@ -179,9 +179,10 @@ struct http_request {
     size_t                http_body_offset;
     size_t                content_length;
     void                *hdlr_extra;
+    int (*free_hdlr_extra)(struct http_request*);
     char                *query_string;
     struct kore_module_handle    *hdlr;
-
+    void                         *data[2];
     LIST_HEAD(, kore_task)        tasks;
     LIST_HEAD(, kore_pgsql)        pgsqls;
 

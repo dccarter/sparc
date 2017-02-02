@@ -10,13 +10,14 @@ int main(int argc, char *argv[]) {
 
     $enter(argc, argv);
     config::domain(SPARC_DOMAIN_NAME);
-    config::debug($ON);
+    config::debug($OFF);
+    config::workers(1);
 
     db::PgSqlContext ctx("db", "user=postgres password=8292db dbname=mytest hostaddr=127.0.0.1");
     const int DB_MYTEST = config::db(&ctx);
 
     get("/pgsql/:id", "application/json", $(req, res) {
-        db::Sql sql(req, res);
+        db::Sql sql;
         sql("SELECT * FROM cafe")
            ("WHERE id >= %s", req.param("id"));
 
@@ -48,6 +49,49 @@ int main(int argc, char *argv[]) {
         }
 
         return NO_CONTENT;
+    });
+
+    get("/async/:id", "application/json", $(req, res) {
+        int status = $ASYNC;
+        db::Sql sql(req);
+        sql("SELECT * from cafe")
+           ("WHERE id >= %s", req.param("id"));
+
+        status =
+        db::query(DB_MYTEST, sql, $db(q, r) {
+            if (r) {
+                Response& resp = q.resp();
+                size_t tmp = 64;
+                q.resp() << r.toJson()->encode(tmp);
+                return OK;
+            }
+            return NO_CONTENT;
+        });
+
+        $async(status);
+    });
+
+    get("/async/raw/:id", $(req, res) {
+        int status = $ASYNC;
+        db::Sql sql(req);
+        sql("SELECT * from cafe")
+           ("WHERE id >= %s", req.param("id"));
+        status =
+        db::query(DB_MYTEST, sql, $db(sq, r){
+            if (r) {
+                for (auto& row: r) {
+                    sq.resp() << "=========== RECORD============\n";
+                    sq.resp() << "id: " << row["id"] << "\n";
+                    sq.resp() << "category: " << row["category"] << "\n";
+                    sq.resp() << "name: " << row["name"] << "\n";
+                    sq.resp() << "price: " << row["price"] << "\n";
+                    sq.resp() << "last_upade: " << row["last_update"] << "\n";
+                }
+                return OK;
+            }
+            return NO_CONTENT;
+        });
+        $async(status);
     });
 
     return $exit();

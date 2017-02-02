@@ -82,7 +82,7 @@ http_init(void)
     header_buf = kore_buf_alloc(1024);
 
     l = snprintf(http_version, sizeof(http_version),
-        "server: kore (%d.%d.%d-%s)\r\n", KORE_VERSION_MAJOR,
+        "sofware: kore (%d.%d.%d-%s)\r\n", KORE_VERSION_MAJOR,
         KORE_VERSION_MINOR, KORE_VERSION_PATCH, KORE_VERSION_STATE);
     if (l == -1 || (size_t)l >= sizeof(http_version))
         fatal("http_init(): http_version buffer too small");
@@ -196,10 +196,12 @@ http_request_new(struct connection *c, const char *host,
     req->http_body = NULL;
     req->http_body_fd = -1;
     req->hdlr_extra = NULL;
+    req->free_hdlr_extra = NULL;
     req->query_string = NULL;
     req->http_body_length = 0;
     req->http_body_offset = 0;
     req->http_body_path = NULL;
+    memset(req->data, 0, sizeof(req->data));
 
     if ((p = strrchr(host, ':')) != NULL)
         *p = '\0';
@@ -279,6 +281,7 @@ http_process(void)
 
         next = TAILQ_NEXT(req, list);
         if (req->flags & HTTP_REQUEST_DELETE) {
+            kore_debug("free request because HTTP_REQUEST_DELETE %p", req);
             http_request_free(req);
             continue;
         }
@@ -473,8 +476,17 @@ http_request_free(struct http_request *req)
     }
 
     if (req->hdlr_extra != NULL &&
-        !(req->flags & HTTP_REQUEST_RETAIN_EXTRA))
-        kore_free(req->hdlr_extra);
+        !(req->flags & HTTP_REQUEST_RETAIN_EXTRA)) {
+
+        if (req->free_hdlr_extra) {
+            kore_debug("free request hdlr_extra %p %p, %p",
+                       req, req->hdlr_extra, req->hdlr_extra);
+            req->free_hdlr_extra(req);
+        }
+        else {
+            kore_free(req->hdlr_extra);
+        }
+    }
 
     kore_pool_put(&http_request_pool, req);
     http_request_count--;
@@ -1061,15 +1073,15 @@ http_state_run(struct http_state *states, u_int8_t elm,
     int        r, done;
 
     done = 0;
-
+    kore_debug("http_state_run: %p (%d)", req, req->fsm_state);
     while (!done) {
         if (req->fsm_state >= elm) {
             fatal("http_state_run: fsm_state > elm (%d/%d)",
                 req->fsm_state, elm);
         }
 
-        kore_debug("http_state_run: running %s",
-            states[req->fsm_state].name);
+        kore_debug("http_state_run: (%p) running %s",
+            req, states[req->fsm_state].name);
 
         r = states[req->fsm_state].cb(req);
         switch (r) {
@@ -1300,6 +1312,7 @@ http_body_recv(struct netbuf *nb)
     u_int64_t        bytes_left;
     struct http_request    *req = (struct http_request *)nb->extra;
 
+    kore_debug("http_body_recv %p, %p", nb, nb->owner);
     if (req->http_body_fd != -1) {
         ret = write(req->http_body_fd, nb->buf, nb->s_off);
         if (ret == -1 || (size_t)ret != nb->s_off) {
@@ -1382,7 +1395,7 @@ http_response_normal(struct http_request *req, struct connection *c,
 
     kore_buf_appendf(header_buf, "HTTP/1.1 %d %s\r\n",
         status, http_status_text(status));
-    kore_buf_append(header_buf, http_version, http_version_len);
+    //kore_buf_append(header_buf, http_version, http_version_len);
 
     if (c->flags & CONN_CLOSE_EMPTY)
         connection_close = 1;

@@ -191,8 +191,11 @@ namespace sparc {
 
     namespace detail {
 
-        CcanJson::CcanJson(JsonNode *node)
-                : root_(node)
+        CcanJson::CcanJson(JsonNode *node, bool cache)
+                : root_(node),
+                  encoded_(false),
+                  jstr_(NULL),
+                  cache_(cache)
         {}
 
         CcanJson::~CcanJson() {
@@ -200,26 +203,47 @@ namespace sparc {
                 json_delete(root_);
                 root_ = NULL;
             }
+            // delete the encoded string
+            if (jstr_) {
+                kore_free(jstr_);
+                jstr_ = NULL;
+            }
         }
 
         c_string CcanJson::encode(size_t &len, char *space) {
-            if (root_)
-                return json_stringify(root_, space, &len);
+            if (root_) {
+                // TODO check if the node was previously updated
+                if (jstr_ != NULL && !cache_) {
+                    kore_free(jstr_);
+                    jstr_ = nullptr;
+                }
+
+                if (jstr_ == nullptr)
+                    jstr_ = json_stringify(root_, space, &len);
+                return jstr_;
+            }
             return NULL;
+        }
+
+        c_string CcanJson::encode() {
+            size_t tmp = 64;
+            return encode(tmp);
         }
     }
 
-    Json* Json::create() {
+    Json* Json::create(bool cache) {
         JsonNode *jn = json_mkobject();
         return new detail::CcanJson(jn);
     }
 
     Json *Json::decode(cc_string jstr) {
         JsonNode *jnode = json_decode(jstr);
+        detail::CcanJson *cjson = NULL;
         if (jnode == NULL) {
             $warn("decoding json failed: %s", errno_s);
             return NULL;
         }
-        return new detail::CcanJson(jnode);
+        cjson = new detail::CcanJson(jnode);
+        return cjson;
     }
 }

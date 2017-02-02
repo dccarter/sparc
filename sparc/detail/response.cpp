@@ -7,6 +7,7 @@
 #include "kore.h"
 
 namespace sparc {
+
     namespace detail {
 
         HttpResponse::HttpResponse(http_request *req)
@@ -189,6 +190,20 @@ namespace sparc {
                 ended_ = true;
                 body_.reset();
             }
+        }
+
+        Response& HttpResponse::operator<<(Json *json) {
+            if (!ended_ && body_.offset() == 0) {
+                size_t size = 64;
+                cc_string body = json->encode(size);
+                // only write if the encode was sucecessful
+                if (body) {
+                    body_.append(body, size);
+                    return *this;
+                }
+            }
+            $warn("error writing json %d %d", ended_, body_.offset());
+            return *this;
         }
     }
 }

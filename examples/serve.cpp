@@ -2,6 +2,8 @@
 // Created by dc on 11/29/16.
 //
 
+#include <openssl/md5.h>
+#include <cstring>
 #include "sparc.h"
 
 using namespace sparc;

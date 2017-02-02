@@ -78,10 +78,8 @@ kore_pgsql_init(void)
 
 int
 kore_pgsql_query_init(struct kore_pgsql *pgsql, struct http_request *req,
-    const char *dbname, int flags)
+      struct pgsql_db *db, int flags)
 {
-    struct pgsql_db        *db;
-
     memset(pgsql, 0, sizeof(*pgsql));
     pgsql->flags = flags;
     pgsql->state = KORE_PGSQL_STATE_INIT;
@@ -90,12 +88,6 @@ kore_pgsql_query_init(struct kore_pgsql *pgsql, struct http_request *req,
         ((flags & KORE_PGSQL_ASYNC) && (flags & KORE_PGSQL_SYNC))) {
         pgsql_set_error(pgsql, "invalid query init parameters");
         return (KORE_RESULT_ERROR);
-    }
-
-    db = NULL;
-    LIST_FOREACH(db, &pgsql_db_conn_strings, rlist) {
-        if (!strcmp(db->name, dbname))
-            break;
     }
 
     if (db == NULL) {
@@ -133,6 +125,7 @@ kore_pgsql_query(struct kore_pgsql *pgsql, const char *query)
         if ((PQresultStatus(pgsql->result) != PGRES_TUPLES_OK) &&
             (PQresultStatus(pgsql->result) != PGRES_COMMAND_OK)) {
             pgsql_set_error(pgsql, PQerrorMessage(pgsql->conn->db));
+            kore_log(LOG_NOTICE, "error on query %s", query);
             return (KORE_RESULT_ERROR);
         }
 
@@ -140,6 +133,7 @@ kore_pgsql_query(struct kore_pgsql *pgsql, const char *query)
     } else {
         if (!PQsendQuery(pgsql->conn->db, query)) {
             pgsql_set_error(pgsql, PQerrorMessage(pgsql->conn->db));
+            kore_log(LOG_NOTICE, "error on query %s", query);
             return (KORE_RESULT_ERROR);
         }
 
@@ -228,14 +222,14 @@ kore_pgsql_query_params(struct kore_pgsql *pgsql,
     return (ret);
 }
 
-int
+struct pgsql_db*
 kore_pgsql_register(const char *dbname, const char *connstring)
 {
     struct pgsql_db        *pgsqldb;
 
     LIST_FOREACH(pgsqldb, &pgsql_db_conn_strings, rlist) {
         if (!strcmp(pgsqldb->name, dbname))
-            return (KORE_RESULT_ERROR);
+            return (NULL);
     }
 
     pgsqldb = kore_malloc(sizeof(*pgsqldb));
@@ -243,7 +237,25 @@ kore_pgsql_register(const char *dbname, const char *connstring)
     pgsqldb->conn_string = kore_strdup(connstring);
     LIST_INSERT_HEAD(&pgsql_db_conn_strings, pgsqldb, rlist);
 
-    return (KORE_RESULT_OK);
+    return pgsqldb;
+}
+
+void
+kore_pgsql_unregister(struct pgsql_db *db)
+{
+    struct pgsql_db *it, *tmp;
+
+    for (it = LIST_FIRST(&pgsql_db_conn_strings); it != NULL; it = tmp) {
+        tmp = LIST_NEXT(it, rlist);
+        if (db == it) {
+            // remove entry and free memory
+            LIST_REMOVE(it, rlist);
+            kore_free(db->name);
+            kore_free(db->conn_string);
+            kore_free(db);
+            break;
+        }
+    }
 }
 
 void
@@ -260,7 +272,7 @@ kore_pgsql_handle(void *c, int err)
 
     req = conn->job->req;
     pgsql = conn->job->pgsql;
-    kore_debug("kore_pgsql_handle: %p (%d)", req, pgsql->state);
+    kore_debug("kore_pgsql_handle: %p (%d), %p", req, pgsql->state, pgsql);
 
     if (!PQconsumeInput(conn->db)) {
         pgsql->state = KORE_PGSQL_STATE_ERROR;
@@ -317,8 +329,9 @@ kore_pgsql_cleanup(struct kore_pgsql *pgsql)
     if (pgsql->result != NULL)
         PQclear(pgsql->result);
 
-    if (pgsql->error != NULL)
+    if (pgsql->error != NULL) {
         kore_free(pgsql->error);
+    }
 
     if (pgsql->conn != NULL)
         pgsql_conn_release(pgsql);

@@ -52,7 +52,8 @@ struct kore_pgsql {
     char            *error;
     PGresult        *result;
     struct pgsql_conn    *conn;
-
+    // the cleanup_callback is used in case a connection is
+    // deleted and the sql hasn't been cleaned up
     LIST_ENTRY(kore_pgsql)    rlist;
 };
 
@@ -60,7 +61,7 @@ extern u_int16_t    pgsql_conn_max;
 
 void    kore_pgsql_init(void);
 int    kore_pgsql_query_init(struct kore_pgsql *, struct http_request *,
-        const char *, int);
+         struct pgsql_db*, int);
 void    kore_pgsql_handle(void *, int);
 void    kore_pgsql_cleanup(struct kore_pgsql *);
 void    kore_pgsql_continue(struct http_request *, struct kore_pgsql *);
@@ -69,7 +70,8 @@ int    kore_pgsql_query_params(struct kore_pgsql *,
         const char *, int, u_int8_t, ...);
 int    kore_pgsql_v_query_params(struct kore_pgsql *,
         const char *, int, u_int8_t, va_list);
-int    kore_pgsql_register(const char *, const char *);
+struct pgsql_db *kore_pgsql_register(const char *, const char *);
+void   kore_pgsql_unregister(struct pgsql_db *db);
 int    kore_pgsql_ntuples(struct kore_pgsql *);
 int    kore_pgsql_nfields(struct kore_pgsql *);
 void    kore_pgsql_logerror(struct kore_pgsql *);
@@ -85,8 +87,8 @@ int    kore_pgsql_getlength(struct kore_pgsql *, int, int);
 
 #define KORE_PGSQL_STATE_INIT        1
 #define KORE_PGSQL_STATE_WAIT        2
-#define KORE_PGSQL_STATE_RESULT        3
-#define KORE_PGSQL_STATE_ERROR        4
+#define KORE_PGSQL_STATE_RESULT      3
+#define KORE_PGSQL_STATE_ERROR       4
 #define KORE_PGSQL_STATE_DONE        5
 #define KORE_PGSQL_STATE_COMPLETE    6
 

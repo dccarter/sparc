@@ -5,7 +5,23 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
 OPTION(SPARC_TESTS      "Build sparc unit tests" ON)
 OPTION(SPARC_EXAMPLES   "Build sparc examples" ON)
-OPTION(SPARC_PQ_V96     "Build PgSQL version will default to 9.6" OFF)
+OPTION(SPARC_PQ_V96     "Build  PgSQL version will default to 9.6" OFF)
+OPTION(SPARC_RELEASE    "If set to one, the current build will be a release build" OFF)
+
+# Release version follows MAJOR.MINOR.PATCH
+# +MAJOR - API changes, +MINOR - New Features, +PATCH bug fixes
+SET(SPARC_VERSION "0.0.1" CACHE STRING "The release version of sparc")
+# Build number of a specific version (e.g sparc 2.0.6.345-devel)
+SET(SPARC_VERSION_BUILD 0 CACHE STRING "The number for sparc version")
+# The version string to be appended to non official releases
+SET(SPARC_VERSION_STRING "devel" CACHE STRING "1 if this is a development release")
+if (SPARC_RELEASE)
+    SET(SPARC_RELEASE_BUILD 1)
+else()
+    SET(SPARC_RELEASE_BUILD 0)
+endif()
+
+configure_file(sparch.h.in version.h)
 
 SET(SPARC_FLAGS "${SPARC_FLAGS} -Wmissing-declarations -Wshadow -Wpointer-arith")
 SET(SPARC_FLAGS "${SPARC_FLAGS} -Wsign-compare -Wno-pedantic -rdynamic")
@@ -53,6 +69,7 @@ FIND_PACKAGE(PostgreSQL ${PGSQL_VERSION} REQUIRED)
 
 ADD_DEFINITIONS("-DKORE_NO_TLS -DTASKS -DKORE_DEBUG -DKORE_SINGLE_BINARY -DKORE_USE_PGSQL=1 -D_GNU_SOURCE=1")
 INCLUDE_DIRECTORIES(base/ base/kore sparc sparc/detail ${PostgreSQL_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 ADD_LIBRARY(sparc-dev STATIC ${SOURCE_FILES})
 TARGET_LINK_LIBRARIES(sparc-dev pthread dl ssl crypto ${PostgreSQL_LIBRARIES})
 

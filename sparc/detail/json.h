@@ -13,14 +13,16 @@ namespace sparc {
 
         struct CcanJson : public Json {
         public:
-            CcanJson(JsonNode *);
+            CcanJson(JsonNode *, bool cache = false);
 
             virtual ~CcanJson();
 
-            virtual c_string encode(size_t &, char *space) override;
-
-            JsonNode *root_;
-
+            virtual c_string encode(size_t &, char *space = NULL) override;
+            virtual c_string encode() override;
+            JsonNode    *root_;
+            c_string    jstr_;
+            bool        encoded_;
+            bool        cache_;
             OVERLOAD_MEMOPERATORS();
         };
     }
