@@ -145,7 +145,8 @@ namespace sparc {
         }
 
         Router::Router()
-            : depth(1)
+            : depth(1),
+              jsonCache_(NULL)
         {
             root_ = new Node;
             root_->tag = '/';
